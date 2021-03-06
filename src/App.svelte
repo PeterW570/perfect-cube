@@ -5,6 +5,7 @@
 	let ctx;
 
 	let canvasOffsets = { x: 0, y: 0 };
+	let offsetsSet = false;
 
 	let startPosition = { x: 0, y: 0 };
 	let endPosition = { x: 0, y: 0 };
@@ -29,6 +30,11 @@
 	}
 
 	function onMouseDown(event) {
+		if (!offsetsSet) {
+			canvasOffsets.x = canvasEl.getBoundingClientRect().left;
+			canvasOffsets.y = canvasEl.getBoundingClientRect().top;
+		}
+
 		startPosition = getClientOffset(event);
 		isDrawing = true;
 	}
@@ -51,8 +57,6 @@
 
 	onMount(() => {
 		ctx = canvasEl.getContext('2d');
-		canvasOffsets.x = canvasEl.getBoundingClientRect().left;
-		canvasOffsets.y = canvasEl.getBoundingClientRect().top;
 		ctx.strokeStyle = '#000';
 		ctx.lineJoin = 'round';
 		ctx.lineCap = 'round';
@@ -94,6 +98,7 @@
 
 	.artboard > canvas {
 		border: 1px solid #dadada;
+		touch-action: none;
 	}
 
 	@media (min-width: 640px) {
