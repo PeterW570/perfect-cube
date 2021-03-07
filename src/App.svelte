@@ -66,10 +66,11 @@
 
 <main>
 	<div>
-		<button on:click={clearCanvas}>Clear</button>
+		<button class="select-none" on:click={clearCanvas}>Clear</button>
 	</div>
 	<div class="artboard">
 		<canvas
+			class="select-none"
 			bind:this={canvasEl}
 			on:mousedown={onMouseDown}
 			on:touchstart={onMouseDown}
@@ -94,6 +95,10 @@
 		padding: 1em;
 		max-width: 40em;
 		margin: 0 auto;
+	}
+
+	.select-none {
+		user-select: none;
 	}
 
 	.artboard > canvas {
