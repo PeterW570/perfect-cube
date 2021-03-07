@@ -1,6 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
 
+	/**
+	 * A position with x, y coordinates
+	 * @typedef {object} Position
+	 * @property {number} x - The x coordinate
+	 * @property {number} y - The y coordinate
+	 */
+
 	let canvasEl;
 	let ctx;
 
@@ -25,6 +32,12 @@
 		};
 	};
 
+	/**
+	 * Assign the project to an employee.
+	 * @param {Object} points - The points to draw a line between
+	 * @param {Position} points.start - The start point.
+	 * @param {Position} points.end - The end point.
+	 */
 	function drawLine({ start = startPosition, end = endPosition } = {}) {
 		ctx.beginPath();
 		ctx.moveTo(start.x, start.y);
@@ -117,7 +130,10 @@
 						point.y <= canvasSize.height
 				);
 
-				drawLine({ start: pointsInBounds[0], end: pointsInBounds[1] });
+				drawLine({
+					start: pointsInBounds[0],
+					end: pointsInBounds[1],
+				});
 			}
 		}
 
