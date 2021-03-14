@@ -167,6 +167,25 @@
 			height="500"
 		/>
 	</div>
+	<div class="instructions">
+		<ol>
+			<!-- TODO: 1 point & 2 points perspective instructions -->
+			<li>
+				Visualise a box, and think of which corner is closest to you.
+			</li>
+			<li>
+				Draw a line for each of the edges connected to that corner. Each
+				edge should be drawn in a single stroke.
+			</li>
+			<li>
+				Think of where the vanishing points are for each of the parallel
+				edges on the box.
+			</li>
+			<li>
+				Draw the remaining edges, converging at the vanishing points
+			</li>
+		</ol>
+	</div>
 </main>
 
 <style>
@@ -176,7 +195,6 @@
 	}
 
 	main {
-		text-align: center;
 		padding: 1em;
 		max-width: 40em;
 		margin: 0 auto;
