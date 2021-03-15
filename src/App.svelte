@@ -1,12 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-
-	/**
-	 * A position with x, y coordinates
-	 * @typedef {object} Position
-	 * @property {number} x - The x coordinate
-	 * @property {number} y - The y coordinate
-	 */
+	import { distanceBetweenPoints } from './utils';
 
 	let canvasEl;
 	let ctx;
@@ -19,6 +13,13 @@
 	let endPosition = { x: 0, y: 0 };
 	let isDrawing = false;
 
+	/**
+	 * @typedef {object} LineDetails
+	 * @property {Position} start
+	 * @property {Position} end
+	 * @property {Position[]} points
+	 */
+	/** @type {LineDetails[]} */
 	let lineHistory = [];
 
 	const getClientOffset = (event) => {
@@ -61,7 +62,7 @@
 
 		startPosition = getClientOffset(event);
 		isDrawing = true;
-		lineHistory.push([startPosition]);
+		lineHistory.push({ start: startPosition, points: [startPosition] });
 	}
 
 	function onMouseMove(event) {
@@ -69,11 +70,13 @@
 
 		endPosition = getClientOffset(event);
 		drawLine();
-		lineHistory[lineHistory.length - 1].push(endPosition);
+		lineHistory[lineHistory.length - 1].points.push(endPosition);
 		startPosition = endPosition;
 	}
 
 	function onMouseUp() {
+		const lastLine = lineHistory[lineHistory.length - 1];
+		lastLine.end = lastLine.points[lastLine.points.length - 1];
 		isDrawing = false;
 	}
 
@@ -82,13 +85,38 @@
 		ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 	}
 
+	/**
+	 * find the closest corner to the viewer
+	 * assumes that the first three lines are connected to it
+	 * as stated in the instructions
+	 *
+	 * @returns {Position}
+	 */
+	function findClosestCornerToViewer() {
+		const startAndEndArr = (line) => [line.start, line.end];
+		const distancesToPoints = [];
+		for (const lineAPoint of startAndEndArr(lineHistory[0])) {
+			for (const lineBPoint of startAndEndArr(lineHistory[1])) {
+				const dist = distanceBetweenPoints(lineAPoint, lineBPoint);
+				distancesToPoints.push([dist, lineAPoint, lineBPoint]);
+			}
+		}
+		distancesToPoints.sort((a, b) => a[0] - b[0]);
+		return distancesToPoints[0][1];
+	}
+
 	function analyse() {
-		ctx.strokeStyle = 'red';
+		const closestCorner = findClosestCornerToViewer();
+		const analysedLines = [];
 
-		for (const line of lineHistory) {
-			const start = line[0];
-			const end = line[line.length - 1];
-
+		for (const [lineIdx, { start, end }] of Object.entries(lineHistory)) {
+			const farCorner =
+				lineIdx >= 3
+					? null
+					: distanceBetweenPoints(closestCorner, start) >
+					  distanceBetweenPoints(closestCorner, end)
+					? start
+					: end;
 			const rightMostPoint = start.x > end.x ? start : end;
 			const leftMostPoint = start.x < end.x ? start : end;
 
@@ -97,12 +125,12 @@
 				(rightMostPoint.x - leftMostPoint.x);
 			const yIntercept = start.y - gradient * start.x;
 
+			let lineStart;
+			let lineEnd;
 			if (isNaN(gradient)) {
 				// draw a vertical guideline
-				drawLine({
-					start: { x: start.x, y: 0 },
-					end: { x: start.x, y: canvasSize.height },
-				});
+				lineStart = { x: start.x, y: 0 };
+				lineEnd = { x: start.x, y: canvasSize.height };
 			} else {
 				// find the two points that intersect the border
 				// of the canvas, and draw guideline between
@@ -130,13 +158,65 @@
 						point.y <= canvasSize.height
 				);
 
-				drawLine({
-					start: pointsInBounds[0],
-					end: pointsInBounds[1],
-				});
+				lineStart = pointsInBounds[0];
+				lineEnd = pointsInBounds[1];
 			}
+
+			let boundaryPointClosestToVP = null;
+			if (farCorner) {
+				boundaryPointClosestToVP =
+					distanceBetweenPoints(lineStart, closestCorner) >
+					distanceBetweenPoints(lineStart, farCorner)
+						? lineStart
+						: lineEnd;
+			}
+
+			analysedLines.push({
+				start: lineStart,
+				end: lineEnd,
+				boundaryPointClosestToVP,
+			});
 		}
 
+		const grouped = [];
+		for (const {
+			start,
+			end,
+			boundaryPointClosestToVP,
+		} of analysedLines.slice(0, 3)) {
+			const linesByClosenessToBoundaryPoint = analysedLines
+				.slice(3)
+				.map(({ start, end }) => {
+					return {
+						dist: Math.min(
+							distanceBetweenPoints(
+								boundaryPointClosestToVP,
+								start
+							),
+							distanceBetweenPoints(boundaryPointClosestToVP, end)
+						),
+						start,
+						end,
+					};
+				});
+			linesByClosenessToBoundaryPoint.sort((a, b) => a.dist - b.dist);
+			grouped.push(
+				[{ start, end }].concat(
+					linesByClosenessToBoundaryPoint
+						.slice(0, 2)
+						.map((line) => ({ start: line.start, end: line.end }))
+				)
+			);
+		}
+
+		const colours = ['red', 'orange', 'purple'];
+
+		for (const [groupIdx, lines] of Object.entries(grouped)) {
+			ctx.strokeStyle = colours[groupIdx];
+			for (const { start, end } of lines) {
+				drawLine({ start, end });
+			}
+		}
 		ctx.strokeStyle = '#000';
 	}
 
