@@ -1,6 +1,10 @@
 <script>
 	import { onMount } from 'svelte';
-	import { distanceBetweenPoints } from './utils';
+	import {
+		distanceBetweenPoints,
+		findTranslationBetweenPoints,
+		translatePoint,
+	} from './utils';
 
 	let canvasEl;
 	let ctx;
@@ -106,17 +110,24 @@
 	}
 
 	function analyse() {
+		// find the common point of the first three lines
+		// this is the corner closest to the viewer
 		const closestCorner = findClosestCornerToViewer();
 		const analysedLines = [];
 
+		const initialLinesFarCorners = [];
 		for (const [lineIdx, { start, end }] of Object.entries(lineHistory)) {
-			const farCorner =
-				lineIdx >= 3
-					? null
-					: distanceBetweenPoints(closestCorner, start) >
-					  distanceBetweenPoints(closestCorner, end)
-					? start
-					: end;
+			if (lineIdx < 3) {
+				// for the first three edges, find the point furthest
+				// from the common point
+				const farCorner =
+					distanceBetweenPoints(closestCorner, start) >
+					distanceBetweenPoints(closestCorner, end)
+						? start
+						: end;
+				initialLinesFarCorners.push(farCorner);
+			}
+
 			const rightMostPoint = start.x > end.x ? start : end;
 			const leftMostPoint = start.x < end.x ? start : end;
 
@@ -162,60 +173,75 @@
 				lineEnd = pointsInBounds[1];
 			}
 
-			let boundaryPointClosestToVP = null;
-			if (farCorner) {
-				boundaryPointClosestToVP =
-					distanceBetweenPoints(lineStart, closestCorner) >
-					distanceBetweenPoints(lineStart, farCorner)
-						? lineStart
-						: lineEnd;
+			let groupIdx = lineIdx < 3 ? lineIdx : null;
+			if (lineIdx >= 3) {
+				/**
+				 * try to group the edges together into parallel
+				 * edges of the cube. we do this by finding which of
+				 * the initial three edges this edge is connected to,
+				 * and then translating back along that edge.
+				 * this edge should then be overlaid onto the edge its
+				 * grouped with
+				 */
+
+				// find which far corner from an original edge
+				// this edge is closest (connected) to.
+				const { nearCorner, farCorner } = initialLinesFarCorners
+					.flatMap((point, cornerIdx) => {
+						return [
+							{
+								cornerIdx,
+								dist: distanceBetweenPoints(point, start),
+								nearCorner: start,
+								farCorner: end,
+							},
+							{
+								cornerIdx,
+								dist: distanceBetweenPoints(point, end),
+								nearCorner: end,
+								farCorner: start,
+							},
+						];
+					})
+					.sort((a, b) => a.dist - b.dist)[0];
+
+				// then translate the other corner by the diff between the
+				// connected and the closest corner.
+				// this essentially overlays the edge onto one of the
+				// initial three edges
+				const translatedFarCorner = translatePoint(
+					farCorner,
+					findTranslationBetweenPoints(nearCorner, closestCorner)
+				);
+
+				// now find which corner of the initial edges this far
+				// corner is closest to. this is its group
+				const { cornerIdx } = initialLinesFarCorners
+					.map((point, cornerIdx) => {
+						return {
+							cornerIdx,
+							dist: distanceBetweenPoints(
+								point,
+								translatedFarCorner
+							),
+						};
+					})
+					.sort((a, b) => a.dist - b.dist)[0];
+
+				groupIdx = cornerIdx;
 			}
 
 			analysedLines.push({
 				start: lineStart,
 				end: lineEnd,
-				boundaryPointClosestToVP,
+				groupIdx,
 			});
 		}
 
-		const grouped = [];
-		for (const {
-			start,
-			end,
-			boundaryPointClosestToVP,
-		} of analysedLines.slice(0, 3)) {
-			const linesByClosenessToBoundaryPoint = analysedLines
-				.slice(3)
-				.map(({ start, end }) => {
-					return {
-						dist: Math.min(
-							distanceBetweenPoints(
-								boundaryPointClosestToVP,
-								start
-							),
-							distanceBetweenPoints(boundaryPointClosestToVP, end)
-						),
-						start,
-						end,
-					};
-				});
-			linesByClosenessToBoundaryPoint.sort((a, b) => a.dist - b.dist);
-			grouped.push(
-				[{ start, end }].concat(
-					linesByClosenessToBoundaryPoint
-						.slice(0, 2)
-						.map((line) => ({ start: line.start, end: line.end }))
-				)
-			);
-		}
-
 		const colours = ['red', 'orange', 'purple'];
-
-		for (const [groupIdx, lines] of Object.entries(grouped)) {
+		for (const { start, end, groupIdx } of analysedLines) {
 			ctx.strokeStyle = colours[groupIdx];
-			for (const { start, end } of lines) {
-				drawLine({ start, end });
-			}
+			drawLine({ start, end });
 		}
 		ctx.strokeStyle = '#000';
 	}
