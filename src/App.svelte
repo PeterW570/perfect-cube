@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import {
+		deepEqual,
 		distanceBetweenPoints,
 		findTranslationBetweenPoints,
 		translatePoint,
@@ -25,6 +26,8 @@
 	 */
 	/** @type {LineDetails[]} */
 	let lineHistory = [];
+	let debugLineDetails = [];
+	let debugProperties = {};
 
 	const getClientOffset = (event) => {
 		const { pageX, pageY } = event.touches ? event.touches[0] : event;
@@ -81,11 +84,17 @@
 	function onMouseUp() {
 		const lastLine = lineHistory[lineHistory.length - 1];
 		lastLine.end = lastLine.points[lastLine.points.length - 1];
+		debugLineDetails = [
+			...debugLineDetails,
+			{ start: lastLine.start, end: lastLine.end },
+		];
 		isDrawing = false;
 	}
 
 	function clearCanvas() {
 		lineHistory = [];
+		debugLineDetails = [];
+		debugProperties = {};
 		ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 	}
 
@@ -115,6 +124,8 @@
 		const closestCorner = findClosestCornerToViewer();
 		const analysedLines = [];
 
+		debugProperties.closestCorner = closestCorner;
+
 		const initialLinesFarCorners = [];
 		for (const [lineIdx, { start, end }] of Object.entries(lineHistory)) {
 			if (lineIdx < 3) {
@@ -126,6 +137,11 @@
 						? start
 						: end;
 				initialLinesFarCorners.push(farCorner);
+				debugLineDetails[lineIdx].group = lineIdx;
+				debugLineDetails[lineIdx].startIsNear = deepEqual(
+					farCorner,
+					end
+				);
 			}
 
 			const rightMostPoint = start.x > end.x ? start : end;
@@ -135,6 +151,9 @@
 				(rightMostPoint.y - leftMostPoint.y) /
 				(rightMostPoint.x - leftMostPoint.x);
 			const yIntercept = start.y - gradient * start.x;
+
+			debugLineDetails[lineIdx].gradient = gradient;
+			debugLineDetails[lineIdx].yIntercept = yIntercept;
 
 			let lineStart;
 			let lineEnd;
@@ -205,6 +224,11 @@
 					})
 					.sort((a, b) => a.dist - b.dist)[0];
 
+				debugLineDetails[lineIdx].startIsNear = deepEqual(
+					nearCorner,
+					start
+				);
+
 				// then translate the other corner by the diff between the
 				// connected and the closest corner.
 				// this essentially overlays the edge onto one of the
@@ -213,6 +237,10 @@
 					farCorner,
 					findTranslationBetweenPoints(nearCorner, closestCorner)
 				);
+
+				debugLineDetails[
+					lineIdx
+				].translatedFarCorner = translatedFarCorner;
 
 				// now find which corner of the initial edges this far
 				// corner is closest to. this is its group
@@ -228,6 +256,7 @@
 					})
 					.sort((a, b) => a.dist - b.dist)[0];
 
+				debugLineDetails[lineIdx].group = cornerIdx;
 				groupIdx = cornerIdx;
 			}
 
@@ -256,6 +285,7 @@
 </script>
 
 <main>
+	<h1>Perfect Cube</h1>
 	<div>
 		<button class="select-none" on:click={clearCanvas}>Clear</button>
 		<button class="select-none" on:click={analyse}>Analyse</button>
@@ -274,6 +304,7 @@
 		/>
 	</div>
 	<div class="instructions">
+		<h2>Instructions</h2>
 		<ol>
 			<!-- TODO: 1 point & 2 points perspective instructions -->
 			<li>
@@ -290,6 +321,47 @@
 			<li>
 				Draw the remaining edges, converging at the vanishing points
 			</li>
+		</ol>
+	</div>
+	<div class="debug">
+		<h2>Debug Info</h2>
+		{#if debugProperties.closestCorner}
+			<div>
+				Closest: ({debugProperties.closestCorner.x}, {debugProperties
+					.closestCorner.y})
+			</div>
+		{/if}
+		<ol>
+			{#each debugLineDetails as detail}
+				<li>
+					<div>
+						<span class:highlight={detail.startIsNear}
+							>({detail.start.x}, {detail.start.y})</span
+						>
+						-&gt;
+						<span class:highlight={detail.startIsNear === false}
+							>({detail.end.x}, {detail.end.y})</span
+						>
+					</div>
+					<div>
+						{#if detail.gradient}
+							y = {detail.gradient || '?'} x + {detail.yIntercept ||
+								'?'}
+						{:else if detail.gradient !== undefined}
+							x = {detail.start.x}
+						{/if}
+					</div>
+					{#if detail.translatedFarCorner}
+						<div>
+							Translated Far Corner: ({detail.translatedFarCorner
+								.x}, {detail.translatedFarCorner.y})
+						</div>
+					{/if}
+					{#if detail.group !== undefined}
+						<div class="bold">Group: {detail.group}</div>
+					{/if}
+				</li>
+			{/each}
 		</ol>
 	</div>
 </main>
@@ -313,6 +385,22 @@
 	.artboard > canvas {
 		border: 1px solid #dadada;
 		touch-action: none;
+	}
+
+	.debug {
+		font-family: monospace;
+	}
+
+	.debug li {
+		margin: 8px 0;
+	}
+
+	.bold {
+		font-weight: bold;
+	}
+
+	.highlight {
+		color: orange;
 	}
 
 	@media (min-width: 640px) {
