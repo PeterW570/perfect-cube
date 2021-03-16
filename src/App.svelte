@@ -30,9 +30,9 @@
 	let debugProperties = {};
 
 	const getClientOffset = (event) => {
-		const { pageX, pageY } = event.touches ? event.touches[0] : event;
-		const x = pageX - canvasOffsets.x;
-		const y = pageY - canvasOffsets.y;
+		const { clientX, clientY } = event.touches ? event.touches[0] : event;
+		const x = clientX - canvasOffsets.x;
+		const y = clientY - canvasOffsets.y;
 
 		return {
 			x,
@@ -284,9 +284,9 @@
 	});
 </script>
 
-<main>
+<main class="flow">
 	<h1>Perfect Cube</h1>
-	<div>
+	<div class="buttons">
 		<button class="select-none" on:click={clearCanvas}>Clear</button>
 		<button class="select-none" on:click={analyse}>Analyse</button>
 	</div>
@@ -303,7 +303,7 @@
 			height="500"
 		/>
 	</div>
-	<div class="instructions">
+	<div class="instructions flow">
 		<h2>Instructions</h2>
 		<ol>
 			<!-- TODO: 1 point & 2 points perspective instructions -->
@@ -323,7 +323,7 @@
 			</li>
 		</ol>
 	</div>
-	<div class="debug">
+	<div class="debug flow">
 		<h2>Debug Info</h2>
 		{#if debugProperties.closestCorner}
 			<div>
@@ -370,6 +370,11 @@
 	* {
 		position: relative;
 		box-sizing: border-box;
+		margin: 0;
+	}
+
+	.flow > * + * {
+		margin: 16px 0;
 	}
 
 	main {
@@ -385,6 +390,11 @@
 	.artboard > canvas {
 		border: 1px solid #dadada;
 		touch-action: none;
+	}
+
+	.artboard,
+	.buttons {
+		text-align: center;
 	}
 
 	.debug {
