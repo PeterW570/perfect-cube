@@ -1,4 +1,5 @@
 <script>
+	import ThemePicker from './ThemePicker.svelte';
 	import { onMount } from 'svelte';
 	import {
 		deepEqual,
@@ -285,12 +286,15 @@
 </script>
 
 <main class="flow">
-	<h1>Perfect Cube</h1>
-	<div class="buttons">
+	<div class="title-container flex">
+		<h1>Perfect Cube</h1>
+		<ThemePicker />
+	</div>
+	<div class="buttons text-center">
 		<button class="select-none" on:click={clearCanvas}>Clear</button>
 		<button class="select-none" on:click={analyse}>Analyse</button>
 	</div>
-	<div class="artboard select-none">
+	<div class="artboard select-none text-center">
 		<canvas
 			bind:this={canvasEl}
 			on:mousedown={onMouseDown}
@@ -367,34 +371,21 @@
 </main>
 
 <style>
-	* {
-		position: relative;
-		box-sizing: border-box;
-		margin: 0;
-	}
-
-	.flow > * + * {
-		margin: 16px 0;
-	}
-
 	main {
 		padding: 1em;
 		max-width: 40em;
 		margin: 0 auto;
 	}
 
-	.select-none {
-		user-select: none;
+	.title-container {
+		align-items: center;
+		justify-content: space-between;
 	}
 
 	.artboard > canvas {
 		border: 1px solid #dadada;
 		touch-action: none;
-	}
-
-	.artboard,
-	.buttons {
-		text-align: center;
+		background-color: var(--canvas-background);
 	}
 
 	.debug {
@@ -403,10 +394,6 @@
 
 	.debug li {
 		margin: 8px 0;
-	}
-
-	.bold {
-		font-weight: bold;
 	}
 
 	.highlight {
