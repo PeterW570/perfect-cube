@@ -92,11 +92,19 @@
 		isDrawing = false;
 	}
 
-	function clearCanvas() {
+	function reset() {
 		lineHistory = [];
 		debugLineDetails = [];
 		debugProperties = {};
+	}
+
+	function clearCanvas() {
 		ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+	}
+
+	function onClickClear() {
+		reset();
+		clearCanvas();
 	}
 
 	/**
@@ -291,7 +299,7 @@
 		<ThemePicker />
 	</div>
 	<div class="buttons text-center">
-		<button class="select-none" on:click={clearCanvas}>Clear</button>
+		<button class="select-none" on:click={onClickClear}>Clear</button>
 		<button class="select-none" on:click={analyse}>Analyse</button>
 	</div>
 	<div class="artboard select-none text-center">
