@@ -2,6 +2,8 @@
 	--background: white;
 	--canvas-background: white;
 	--color: #333;
+	--button-background: initial;
+	--button-color: #333;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -10,6 +12,8 @@
 		--background: #333;
 		--canvas-background: #666;
 		--color: white;
+		--button-background: #666;
+		--button-color: white;
 	}
 }
 
@@ -17,6 +21,8 @@
 	--background: #333;
 	--canvas-background: #555;
 	--color: white;
+	--button-background: #666;
+	--button-color: white;
 }
 
 * {
@@ -76,12 +82,11 @@ input:disabled {
 }
 
 button {
-	color: #333;
-	background-color: #f4f4f4;
-	outline: none;
+	background: var(--button-background);
+	color: var(--button-color);
 }
 
-button:disabled {
+/* button:disabled {
 	color: #999;
 }
 
@@ -91,7 +96,7 @@ button:not(:disabled):active {
 
 button:focus {
 	border-color: #666;
-}
+} */
 
 .flow > * {
 	margin-top: 16px;

@@ -181,11 +181,8 @@
 	</div>
 	<div class="debug flow">
 		<h2>Debug Info</h2>
-		{#if debugProperties.closestCorner}
-			<div>
-				Closest: ({debugProperties.closestCorner.x}, {debugProperties
-					.closestCorner.y})
-			</div>
+		{#if cornerDistanceMatrix.length === 0}
+			<p>Click Analyse to get debug info</p>
 		{/if}
 		<table>
 			{#each cornerDistanceMatrix as row}
