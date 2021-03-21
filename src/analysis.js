@@ -107,6 +107,11 @@ const MAX_CORNER_DISTANCE = 10;
 const POINTS_ON_LINE = ['start', 'end'];
 
 /**
+ * build up the matrix of distances between each corner
+ * on the cube. do it incrementally for each line drawn.
+ * mutates the passed in matrix, and assumes lineIdxs are
+ * passed in in the correct order
+ *
  * @param {number[][]} matrix
  * @param {object} opts
  * @param {object[]} opts.lineHistory
@@ -117,6 +122,8 @@ function incrementallyBuildCornerDistanceMatrix(
 	{ lineHistory, lineIdx }
 ) {
 	matrix.push([], []);
+	// find distance between the two points on this line
+	// to every point that has been analysed so far.
 	currPointLoop: for (const currPointIdx in POINTS_ON_LINE) {
 		const currCornerIdx = lineIdx * 2 + Number(currPointIdx);
 
@@ -170,6 +177,8 @@ export function analyse({
 }) {
 	const analysedLines = [];
 
+	// first, build up the corner distance matrix
+	// and calculate the extended lines to plot later
 	const cornerDistanceMatrix = [];
 	for (const [lineIdx, { start, end }] of Object.entries(lineHistory)) {
 		incrementallyBuildCornerDistanceMatrix(cornerDistanceMatrix, {
@@ -195,6 +204,7 @@ export function analyse({
 		});
 	}
 
+	// then map which lines are connected to which
 	const lineConnectionMap = {};
 	const cornerConnectionMap = {};
 	const cornerIdxToLineIdx = (cornerIdx) => Math.floor(cornerIdx / 2);
@@ -232,13 +242,14 @@ export function analyse({
 
 	const otherEndCorner = (cornerIdx) =>
 		cornerIdx % 2 ? cornerIdx - 1 : cornerIdx + 1;
-	// if one end of the line is close to another line's corner
-	// try to use info about the other corner to filter down
-	// the connections.
+	// if two separate corners are close together
+	// try to use info about the other corner on the line
+	// to filter down the connections.
 	for (const [cornerIdx, connections] of needSecondPass) {
 		const lineIdx = cornerIdxToLineIdx(cornerIdx);
 		const otherEndConnections =
 			cornerConnectionMap[otherEndCorner(Number(cornerIdx))];
+
 		const secondOrderCornerConnections = otherEndConnections.flatMap(
 			(idx) => cornerConnectionMap[otherEndCorner(idx)]
 		);
@@ -262,24 +273,23 @@ export function analyse({
 			{}
 		);
 
-		const commonToThree = Object.keys(thirdOrderLineFrequencies)
+		const commonToThreeThirdOrder = Object.keys(thirdOrderLineFrequencies)
 			.filter((key) => thirdOrderLineFrequencies[key] === 3)
-			.map((a) => Number(a));
-		const commonToFewerThanThree = Object.keys(thirdOrderLineFrequencies)
-			.filter((key) => thirdOrderLineFrequencies[key] < 3)
 			.map((a) => Number(a));
 
 		lineConnectionMap[lineIdx] = (lineConnectionMap[lineIdx] || []).concat(
 			connections
 				.map((idx) => cornerIdxToLineIdx(idx))
 				.filter((idx) => {
-					if (commonToThree.length === 2)
-						return commonToThree.includes(idx);
+					if (commonToThreeThirdOrder.length === 2)
+						return commonToThreeThirdOrder.includes(idx);
 					else return !secondOrderLineConnections.includes(idx);
 				})
 		);
 	}
 
+	// group the lines such that each group contains edges
+	// that are parallel on the cube
 	const groupedConnections = [];
 	let ungrouped = Array.from({ length: analysedLines.length }, (_, i) => i);
 	const intersect = (a, b) => a.filter((el) => b.includes(el));
