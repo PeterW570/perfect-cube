@@ -22,6 +22,7 @@
 	 */
 	/** @type {LineDetails[]} */
 	let lineHistory = [];
+	let cornerDistanceMatrix = [];
 	let debugLineDetails = [];
 	let debugProperties = {};
 
@@ -89,6 +90,7 @@
 
 	function reset() {
 		lineHistory = [];
+		cornerDistanceMatrix = [];
 		debugLineDetails = [];
 		debugProperties = {};
 	}
@@ -105,6 +107,7 @@
 	function onClickAnalyse() {
 		const {
 			analysedLines,
+			cornerDistanceMatrix: cornerDists,
 			debugLineDetails: details,
 			debugProperties: properties,
 		} = analyse({
@@ -113,12 +116,13 @@
 			debugProperties,
 			debugLineDetails,
 		});
+		cornerDistanceMatrix = cornerDists;
 		debugLineDetails = details;
 		debugProperties = properties;
 
 		const colours = ['red', 'orange', 'purple'];
 		for (const { start, end, groupIdx } of analysedLines) {
-			ctx.strokeStyle = colours[groupIdx];
+			ctx.strokeStyle = colours[groupIdx] || 'red';
 			drawLine({ start, end });
 		}
 		ctx.strokeStyle = '#000';
@@ -183,34 +187,49 @@
 					.closestCorner.y})
 			</div>
 		{/if}
+		<table>
+			{#each cornerDistanceMatrix as row}
+				<tr>
+					{#each row as distance}
+						<td>{distance.toFixed(2)}</td>
+					{/each}
+				</tr>
+			{/each}
+		</table>
 		<ol>
 			{#each debugLineDetails as detail}
 				<li>
 					<div>
 						<span class:highlight={detail.startIsNear}
-							>({detail.start.x}, {detail.start.y})</span
+							>({detail.start.x.toFixed(2)}, {detail.start.y.toFixed(
+								2
+							)})</span
 						>
 						-&gt;
 						<span class:highlight={detail.startIsNear === false}
-							>({detail.end.x}, {detail.end.y})</span
+							>({detail.end.x.toFixed(2)}, {detail.end.y.toFixed(
+								2
+							)})</span
 						>
 					</div>
 					<div>
 						{#if detail.gradient}
-							y = {detail.gradient || '?'} x + {detail.yIntercept ||
-								'?'}
+							y = {detail.gradient.toFixed(2) || '?'} x + {detail.yIntercept.toFixed(
+								2
+							) || '?'}
 						{:else if detail.gradient !== undefined}
-							x = {detail.start.x}
+							x = {detail.start.x.toFixed(2)}
 						{/if}
 					</div>
-					{#if detail.translatedFarCorner}
+					{#if detail.connections}
 						<div>
-							Translated Far Corner: ({detail.translatedFarCorner
-								.x}, {detail.translatedFarCorner.y})
+							Connections: {detail.connections.map(
+								(idx) => idx + 1
+							)}
 						</div>
 					{/if}
-					{#if detail.group !== undefined}
-						<div class="bold">Group: {detail.group}</div>
+					{#if detail.groupIdx !== undefined}
+						<div class="bold">Group: {detail.groupIdx}</div>
 					{/if}
 				</li>
 			{/each}
@@ -246,6 +265,11 @@
 
 	.highlight {
 		color: orange;
+	}
+
+	table {
+		border-collapse: separate;
+		border-spacing: 1em 0.1em;
 	}
 
 	@media (min-width: 640px) {
