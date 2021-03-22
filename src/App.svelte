@@ -26,6 +26,9 @@
 	let debugLineDetails = [];
 	let debugProperties = {};
 
+	let cornerClosenessScore = null;
+	let straightnessScore = null;
+
 	const getClientOffset = (event) => {
 		const { clientX, clientY } = event.touches ? event.touches[0] : event;
 		const x = clientX - canvasOffsets.x;
@@ -93,6 +96,9 @@
 		cornerDistanceMatrix = [];
 		debugLineDetails = [];
 		debugProperties = {};
+
+		cornerClosenessScore = null;
+		straightnessScore = null;
 	}
 
 	function clearCanvas() {
@@ -110,6 +116,8 @@
 			cornerDistanceMatrix: cornerDists,
 			debugLineDetails: details,
 			debugProperties: properties,
+			averageCornerDistance,
+			averageLineDeviation,
 		} = analyse({
 			lineHistory,
 			canvasSize,
@@ -119,6 +127,14 @@
 		cornerDistanceMatrix = cornerDists;
 		debugLineDetails = details;
 		debugProperties = properties;
+
+		debugProperties.rawAvCornerDistance = averageCornerDistance;
+		debugProperties.rawAvLineDeviation = averageLineDeviation;
+
+		cornerClosenessScore =
+			100 - Math.min(100, Math.pow(averageCornerDistance, 2));
+		straightnessScore =
+			100 - Math.min(100, Math.pow(averageLineDeviation, 3) * 2);
 
 		const colours = ['red', 'orange', 'purple'];
 		for (const { start, end, groupIdx } of analysedLines) {
@@ -159,30 +175,61 @@
 			height="500"
 		/>
 	</div>
-	<div class="instructions flow">
-		<h2>Instructions</h2>
-		<ol>
-			<!-- TODO: 1 point & 2 points perspective instructions -->
-			<li>
-				Visualise a box, and think of which corner is closest to you.
+	<div class="scores">
+		<h2>Score</h2>
+		<ul class="score-items">
+			<li class="score-item">
+				<span class="score-key">Corner Closeness</span>
+				<span class="score-value"
+					>{cornerClosenessScore?.toFixed(1) ?? '-'}</span
+				>
 			</li>
-			<li>
-				Draw a line for each of the edges connected to that corner. Each
-				edge should be drawn in a single stroke.
+			<li class="score-item">
+				<span class="score-key">Straightness</span>
+				<span class="score-value"
+					>{straightnessScore?.toFixed(1) ?? '-'}</span
+				>
 			</li>
+			<li class="score-item">
+				<span class="score-key">Perspective</span><span
+					class="score-value coming-soon">Coming Soon</span
+				>
+			</li>
+			<li class="score-item">
+				<span class="score-key">Overall</span><span
+					class="score-value coming-soon">Coming Soon</span
+				>
+			</li>
+		</ul>
+	</div>
+	<div class="notes flow">
+		<h2>Notes</h2>
+		<ul>
+			<li>Draw each edge with a single stroke.</li>
 			<li>
 				Think of where the vanishing points are for each of the parallel
 				edges on the box.
 			</li>
-			<li>
-				Draw the remaining edges, converging at the vanishing points
-			</li>
-		</ol>
+		</ul>
 	</div>
 	<div class="debug flow">
 		<h2>Debug Info</h2>
 		{#if cornerDistanceMatrix.length === 0}
 			<p>Click Analyse to get debug info</p>
+		{/if}
+		{#if debugProperties.rawAvCornerDistance !== undefined}
+			<p>
+				Raw Av. Corner Distance: {debugProperties.rawAvCornerDistance.toFixed(
+					3
+				)}
+			</p>
+		{/if}
+		{#if debugProperties.rawAvLineDeviation !== undefined}
+			<p>
+				Raw Av. Line Deviation: {debugProperties.rawAvLineDeviation.toFixed(
+					3
+				)}
+			</p>
 		{/if}
 		<table>
 			{#each cornerDistanceMatrix as row}
@@ -230,6 +277,13 @@
 							Av. Deviation: {detail.averageDeviation.toFixed(3)}
 						</div>
 					{/if}
+					{#if detail.averageCornerDistance !== undefined}
+						<div>
+							Av. Corner Dist: {detail.averageCornerDistance.toFixed(
+								3
+							)}
+						</div>
+					{/if}
 					{#if detail.groupIdx !== undefined}
 						<div class="bold">Group: {detail.groupIdx}</div>
 					{/if}
@@ -257,7 +311,7 @@
 		background-color: var(--canvas-background);
 	}
 
-	.debug {
+	.debug > :not(:first-child) {
 		font-family: monospace;
 	}
 
@@ -265,13 +319,42 @@
 		margin: 8px 0;
 	}
 
-	.highlight {
-		color: orange;
+	.score-items {
+		list-style: none;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	.score-item {
+		display: flex;
+		flex-flow: column-reverse;
+		align-items: center;
+		font-size: 2rem;
+		font-weight: bold;
+		margin: 1rem;
+		flex-grow: 1;
+	}
+
+	.score-value.coming-soon {
+		opacity: 0.8;
+		font-size: 1.5rem;
+	}
+
+	.score-key {
+		font-size: 0.75rem;
+		font-weight: normal;
+		text-transform: uppercase;
+		margin: 0.5rem;
 	}
 
 	table {
 		border-collapse: separate;
 		border-spacing: 1em 0.1em;
+
+		display: block;
+		overflow-x: auto;
+		white-space: nowrap;
 	}
 
 	@media (min-width: 640px) {

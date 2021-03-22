@@ -170,6 +170,8 @@ function averagePointDeviation({ points, lineStart, lineEnd }) {
  * @property {number[][]} cornerDistanceMatrix
  * @property {object[]} debugLineDetails
  * @property {object} debugProperties
+ * @property {number} averageCornerDistance
+ * @property {number} averageLineDeviation
  */
 
 /**
@@ -187,6 +189,9 @@ export function analyse({
 	debugLineDetails = [],
 }) {
 	const analysedLines = [];
+	let totalAverageLineDeviation = 0;
+	let totalCornerDistance = 0;
+	let cornerCount = 0;
 
 	// first, build up the corner distance matrix
 	// and calculate the extended lines to plot later
@@ -217,6 +222,7 @@ export function analyse({
 			lineEnd,
 		});
 		debugLineDetails[lineIdx].averageDeviation = averageDeviation;
+		totalAverageLineDeviation += averageDeviation;
 
 		analysedLines.push({
 			start: lineStart,
@@ -245,15 +251,27 @@ export function analyse({
 			throw new Error('Corners not close enough');
 		}
 
+		// this will possibly include some that are later filtered
+		// out by the second pass, but oh well
+		const cornerDistancesForLine = sortedDistances.reduce(
+			(total, curr) => total + curr[1],
+			0
+		);
+		totalCornerDistance += cornerDistancesForLine;
+		cornerCount += sortedDistances.length;
+		debugLineDetails[lineIdx].averageCornerDistance =
+			cornerDistancesForLine / sortedDistances.length;
+
 		cornerConnectionMap[cornerIdx] = sortedDistances.map(([idx]) =>
 			Number(idx)
 		);
-		const cornerToLinesConnected = cornerConnectionMap[
-			cornerIdx
-		].map((idx) => cornerIdxToLineIdx(idx));
-		if (cornerToLinesConnected.length > 2) {
+
+		if (cornerConnectionMap[cornerIdx].length > 2) {
 			needSecondPass.push([cornerIdx, cornerConnectionMap[cornerIdx]]);
 		} else {
+			const cornerToLinesConnected = cornerConnectionMap[
+				cornerIdx
+			].map((idx) => cornerIdxToLineIdx(idx));
 			lineConnectionMap[lineIdx] = (
 				lineConnectionMap[lineIdx] || []
 			).concat(cornerToLinesConnected);
@@ -348,5 +366,7 @@ export function analyse({
 		cornerDistanceMatrix,
 		debugLineDetails,
 		debugProperties,
+		averageCornerDistance: totalCornerDistance / cornerCount,
+		averageLineDeviation: totalAverageLineDeviation / analysedLines.length,
 	};
 }
