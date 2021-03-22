@@ -19,50 +19,28 @@ export function distanceBetweenPoints(pointA, pointB) {
 }
 
 /**
- * find offset between two cartesian points
- * i.e. what to translate pointA by to get to pointB
+ * find the distance from a point to a line
+ * where the line if defined by two points
+ * https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
  * @exports
- * @param {Position} pointA
- * @param {Position} pointB
- * @returns {Position} translate
+ * @param {object} opts
+ * @param {Position} opts.point
+ * @param {Position} opts.lineStart
+ * @param {Position} opts.lineEnd
+ * @returns {number} distance
  */
-export function findTranslationBetweenPoints(pointA, pointB) {
-	return {
-		x: pointB.x - pointA.x,
-		y: pointB.y - pointA.y,
-	};
-}
+export function distanceFromPointToLine({ point, lineStart, lineEnd }) {
+	const lineDiffX = lineEnd.x - lineStart.x;
+	const lineDiffY = lineEnd.y - lineStart.y;
+	const pointToStartDiffX = lineStart.x - point.x;
+	const pointToStartDiffY = lineStart.y - point.y;
 
-/**
- * translate a point by x and y offsets
- * @exports
- * @param {Position} pointToTranslate
- * @param {Position} translation
- * @returns {Position} translatedPoint
- */
-export function translatePoint(pointToTranslate, translation) {
-	return {
-		x: pointToTranslate.x + translation.x,
-		y: pointToTranslate.y + translation.y,
-	};
-}
+	const numerator = Math.abs(
+		lineDiffX * pointToStartDiffY - pointToStartDiffX * lineDiffY
+	);
+	const denominator = Math.sqrt(
+		Math.pow(lineDiffX, 2) + Math.pow(lineDiffY, 2)
+	);
 
-/**
- * check if two variables are equal
- * @exports
- * @param {any} x
- * @param {any} y
- * @returns {boolean} whether x & y are deep equal
- */
-export function deepEqual(x, y) {
-	const bothAreObjects =
-		x && y && typeof x === 'object' && typeof y === 'object';
-	if (bothAreObjects) {
-		const xKeys = Object.keys(x);
-		const yKeys = Object.keys(y);
-		return (
-			xKeys.length === yKeys.length &&
-			xKeys.every((key) => deepEqual(x[key], y[key]))
-		);
-	} else return x === y;
+	return numerator / denominator;
 }

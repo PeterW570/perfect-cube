@@ -1,9 +1,4 @@
-import {
-	deepEqual,
-	distanceBetweenPoints,
-	findTranslationBetweenPoints,
-	translatePoint,
-} from './utils';
+import { distanceBetweenPoints, distanceFromPointToLine } from './utils';
 
 /**
  * @typedef {object} EquationDef
@@ -154,6 +149,22 @@ function incrementallyBuildCornerDistanceMatrix(
 }
 
 /**
+ * @param {object} opts
+ * @param {Position[]} opts.points
+ * @param {Position} opts.lineStart
+ * @param {Position} opts.lineEnd
+ * @returns {number} average deviation
+ */
+function averagePointDeviation({ points, lineStart, lineEnd }) {
+	const total = points.reduce(
+		(subtotal, point) =>
+			subtotal + distanceFromPointToLine({ point, lineStart, lineEnd }),
+		0
+	);
+	return total / points.length;
+}
+
+/**
  * @typedef {object} Analysis
  * @property {object[]} analysedLines
  * @property {number[][]} cornerDistanceMatrix
@@ -180,7 +191,9 @@ export function analyse({
 	// first, build up the corner distance matrix
 	// and calculate the extended lines to plot later
 	const cornerDistanceMatrix = [];
-	for (const [lineIdx, { start, end }] of Object.entries(lineHistory)) {
+	for (const [lineIdx, { start, end, points }] of Object.entries(
+		lineHistory
+	)) {
 		incrementallyBuildCornerDistanceMatrix(cornerDistanceMatrix, {
 			lineHistory,
 			lineIdx,
@@ -198,9 +211,17 @@ export function analyse({
 			canvasSize,
 		});
 
+		const averageDeviation = averagePointDeviation({
+			points,
+			lineStart,
+			lineEnd,
+		});
+		debugLineDetails[lineIdx].averageDeviation = averageDeviation;
+
 		analysedLines.push({
 			start: lineStart,
 			end: lineEnd,
+			averageDeviation,
 		});
 	}
 

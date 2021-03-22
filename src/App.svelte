@@ -225,6 +225,11 @@
 							)}
 						</div>
 					{/if}
+					{#if detail.averageDeviation !== undefined}
+						<div>
+							Av. Deviation: {detail.averageDeviation.toFixed(3)}
+						</div>
+					{/if}
 					{#if detail.groupIdx !== undefined}
 						<div class="bold">Group: {detail.groupIdx}</div>
 					{/if}
