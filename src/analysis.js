@@ -98,7 +98,7 @@ function findExtendedLineEnds({
  * they must be closer than this distance
  * @const {number} MAX_CORNER_DISTANCE
  */
-const MAX_CORNER_DISTANCE = 10;
+const MAX_CORNER_DISTANCE = 15;
 const POINTS_ON_LINE = ['start', 'end'];
 
 /**
