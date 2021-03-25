@@ -1,33 +1,8 @@
-import { distanceBetweenPoints, distanceFromPointToLine } from './utils';
-
-/**
- * @typedef {object} EquationDef
- * @property {number|NaN} gradient
- * @property {number|NaN} yIntercept
- */
-
-/**
- * given two points, calculate the equation of the line
- * that goes through them.
- * @param {object} opts
- * @param {Position} opts.start
- * @param {Position} opts.end
- * @returns {EquationDef} object with
- */
-function calulateEquation({ start, end }) {
-	const rightMostPoint = start.x > end.x ? start : end;
-	const leftMostPoint = start.x < end.x ? start : end;
-
-	const gradient =
-		(rightMostPoint.y - leftMostPoint.y) /
-		(rightMostPoint.x - leftMostPoint.x);
-	const yIntercept = start.y - gradient * start.x;
-
-	return {
-		gradient,
-		yIntercept,
-	};
-}
+import {
+	calculateEquation,
+	distanceBetweenPoints,
+	distanceFromPointToLine,
+} from './utils';
 
 /**
  * @typedef {object} LineEnds
@@ -204,7 +179,7 @@ export function analyse({
 			lineIdx,
 		});
 
-		const { gradient, yIntercept } = calulateEquation({ start, end });
+		const { gradient, yIntercept } = calculateEquation({ start, end });
 		debugLineDetails[lineIdx].gradient = gradient;
 		debugLineDetails[lineIdx].yIntercept = yIntercept;
 

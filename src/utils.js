@@ -44,3 +44,33 @@ export function distanceFromPointToLine({ point, lineStart, lineEnd }) {
 
 	return numerator / denominator;
 }
+
+/**
+ * @typedef {object} EquationDef
+ * @property {number|NaN} gradient
+ * @property {number|NaN} yIntercept
+ */
+
+/**
+ * given two points, calculate the equation of the line
+ * that goes through them.
+ * @exports
+ * @param {object} opts
+ * @param {Position} opts.start
+ * @param {Position} opts.end
+ * @returns {EquationDef} object with
+ */
+export function calculateEquation({ start, end }) {
+	const rightMostPoint = start.x > end.x ? start : end;
+	const leftMostPoint = start.x < end.x ? start : end;
+
+	const gradient =
+		(rightMostPoint.y - leftMostPoint.y) /
+		(rightMostPoint.x - leftMostPoint.x);
+	const yIntercept = start.y - gradient * start.x;
+
+	return {
+		gradient,
+		yIntercept,
+	};
+}
