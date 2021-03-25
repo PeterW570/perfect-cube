@@ -296,7 +296,7 @@
 <style>
 	main {
 		padding: 1em;
-		max-width: 40em;
+		max-width: 50em;
 		margin: 0 auto;
 	}
 
@@ -355,11 +355,5 @@
 		display: block;
 		overflow-x: auto;
 		white-space: nowrap;
-	}
-
-	@media (min-width: 640px) {
-		main {
-			max-width: none;
-		}
 	}
 </style>
