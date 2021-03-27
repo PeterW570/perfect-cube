@@ -2,6 +2,7 @@ import {
 	calculateEquation,
 	distanceBetweenPoints,
 	distanceFromPointToLine,
+	findIntersection,
 } from './utils';
 
 /**
@@ -66,6 +67,64 @@ function findExtendedLineEnds({
 			end: pointsInBounds[1],
 		};
 	}
+}
+
+/**
+ * @typedef {object} ClosenessDetails
+ * @property {number} minDistance
+ * @property {number} maxDistance
+ * @property {number} averageDistance
+ * @property {number} averageRange
+ */
+
+/**
+ * @throws
+ * @param {LineAnalysis[]} lines
+ * @returns {ClosenessDetails}
+ */
+function intersectionClosenessForLines(lines) {
+	const intersectionDistances = [];
+	outer: for (const i in lines) {
+		intersectionDistances.push([]);
+		for (const j in lines) {
+			if (i === j) continue;
+			const intersectionPoint = findIntersection(lines[i], lines[j]);
+			const distFromBox = Math.min(
+				distanceBetweenPoints(lines[i].boxStart, intersectionPoint),
+				distanceBetweenPoints(lines[i].boxEnd, intersectionPoint)
+			);
+			intersectionDistances[i].push(distFromBox);
+		}
+	}
+
+	let totalDist = 0;
+	let minDist = null;
+	let maxDist = null;
+	let totalRange = 0;
+
+	for (const distArr of intersectionDistances) {
+		let totalDistForArr = 0;
+		let min = null;
+		let max = null;
+
+		for (const dist of distArr) {
+			totalDistForArr += dist;
+			if (min === null || dist < min) min = dist;
+			if (max === null || dist > max) max = dist;
+		}
+
+		if (minDist === null || min < minDist) minDist = min;
+		if (maxDist === null || max < maxDist) maxDist = max;
+		totalDist += totalDistForArr / distArr.length;
+		totalRange += max - min / distArr.length;
+	}
+
+	return {
+		minDistance: minDist,
+		maxDistance: maxDist,
+		averageDistance: totalDist / intersectionDistances.length,
+		averageRange: totalRange / intersectionDistances.length,
+	};
 }
 
 /**
@@ -140,13 +199,25 @@ function averagePointDeviation({ points, lineStart, lineEnd }) {
 }
 
 /**
+ * @typedef {object} LineAnalysis
+ * @property {Position} start
+ * @property {Position} end
+ * @property {Position} boxStart
+ * @property {Position} boxEnd
+ * @property {number|NaN} gradient
+ * @property {number|NaN} yIntercept
+ * @property {number} averageDeviation
+ */
+
+/**
  * @typedef {object} Analysis
- * @property {object[]} analysedLines
+ * @property {LineAnalysis[]} analysedLines
  * @property {number[][]} cornerDistanceMatrix
  * @property {object[]} debugLineDetails
  * @property {object} debugProperties
  * @property {number} averageCornerDistance
  * @property {number} averageLineDeviation
+ * @property {number} overallPerspectiveScore
  */
 
 /**
@@ -202,6 +273,10 @@ export function analyse({
 		analysedLines.push({
 			start: lineStart,
 			end: lineEnd,
+			boxStart: start,
+			boxEnd: end,
+			gradient,
+			yIntercept,
 			averageDeviation,
 		});
 	}
@@ -336,6 +411,21 @@ export function analyse({
 		groupedConnections.push(group);
 	}
 
+	let totalLinePerspectiveScore = 0;
+	// for each group of lines, calculate their intersection closeness
+	for (const [groupIdx, group] of Object.entries(groupedConnections)) {
+		const closeness = intersectionClosenessForLines(
+			group.map((idx) => analysedLines[idx])
+		);
+		totalLinePerspectiveScore +=
+			100 - Math.min(100, closeness.averageRange / closeness.minDistance);
+		if (!debugProperties.perspectiveScores)
+			debugProperties.perspectiveScores = [];
+		debugProperties.perspectiveScores.push({ groupIdx, closeness });
+	}
+	const overallPerspectiveScore =
+		totalLinePerspectiveScore / groupedConnections.length;
+
 	return {
 		analysedLines,
 		cornerDistanceMatrix,
@@ -343,5 +433,6 @@ export function analyse({
 		debugProperties,
 		averageCornerDistance: totalCornerDistance / cornerCount,
 		averageLineDeviation: totalAverageLineDeviation / analysedLines.length,
+		overallPerspectiveScore,
 	};
 }

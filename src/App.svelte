@@ -28,6 +28,8 @@
 
 	let cornerClosenessScore = null;
 	let straightnessScore = null;
+	let perspectiveScore = null;
+	let overallScore = null;
 
 	const getClientOffset = (event) => {
 		const { clientX, clientY } = event.touches ? event.touches[0] : event;
@@ -99,6 +101,8 @@
 
 		cornerClosenessScore = null;
 		straightnessScore = null;
+		perspectiveScore = null;
+		overallScore = null;
 	}
 
 	function clearCanvas() {
@@ -118,6 +122,7 @@
 			debugProperties: properties,
 			averageCornerDistance,
 			averageLineDeviation,
+			overallPerspectiveScore,
 		} = analyse({
 			lineHistory,
 			canvasSize,
@@ -133,8 +138,15 @@
 
 		cornerClosenessScore =
 			100 - Math.min(100, Math.pow(averageCornerDistance, 2));
+
+		// TODO: tweak to be more sensitive when box is smaller
 		straightnessScore =
 			100 - Math.min(100, Math.pow(averageLineDeviation, 3) * 2);
+
+		// TODO: handle parallel lines
+		perspectiveScore = overallPerspectiveScore;
+		overallScore =
+			(cornerClosenessScore + straightnessScore + perspectiveScore) / 3;
 
 		const colours = ['red', 'orange', 'purple'];
 		for (const { start, end, groupIdx } of analysedLines) {
@@ -192,12 +204,13 @@
 			</li>
 			<li class="score-item">
 				<span class="score-key">Perspective</span><span
-					class="score-value coming-soon">Coming Soon</span
+					class="score-value"
+					>{perspectiveScore?.toFixed(1) ?? '-'}</span
 				>
 			</li>
 			<li class="score-item">
-				<span class="score-key">Overall</span><span
-					class="score-value coming-soon">Coming Soon</span
+				<span class="score-key">Overall</span><span class="score-value"
+					>{overallScore?.toFixed(1) ?? '-'}</span
 				>
 			</li>
 		</ul>
@@ -231,6 +244,34 @@
 				)}
 			</p>
 		{/if}
+		{#if debugProperties.perspectiveScores}
+			<p class="bold">Closeness</p>
+			<ul>
+				{#each debugProperties.perspectiveScores as perspectiveScores}
+					<li>
+						<div class="bold">
+							Group: {perspectiveScores.groupIdx}
+						</div>
+						<div>
+							minDistance: {perspectiveScores.closeness
+								.minDistance}
+						</div>
+						<div>
+							maxDistance: {perspectiveScores.closeness
+								.maxDistance}
+						</div>
+						<div>
+							averageDistance: {perspectiveScores.closeness
+								.averageDistance}
+						</div>
+						<div>
+							averageRange: {perspectiveScores.closeness
+								.averageRange}
+						</div>
+					</li>
+				{/each}
+			</ul>
+		{/if}
 		<table>
 			{#each cornerDistanceMatrix as row}
 				<tr>
@@ -244,13 +285,13 @@
 			{#each debugLineDetails as detail}
 				<li>
 					<div>
-						<span class:highlight={detail.startIsNear}
+						<span
 							>({detail.start.x.toFixed(2)}, {detail.start.y.toFixed(
 								2
 							)})</span
 						>
 						-&gt;
-						<span class:highlight={detail.startIsNear === false}
+						<span
 							>({detail.end.x.toFixed(2)}, {detail.end.y.toFixed(
 								2
 							)})</span
@@ -334,11 +375,6 @@
 		font-weight: bold;
 		margin: 1rem;
 		flex-grow: 1;
-	}
-
-	.score-value.coming-soon {
-		opacity: 0.8;
-		font-size: 1.5rem;
 	}
 
 	.score-key {

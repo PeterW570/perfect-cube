@@ -58,7 +58,7 @@ export function distanceFromPointToLine({ point, lineStart, lineEnd }) {
  * @param {object} opts
  * @param {Position} opts.start
  * @param {Position} opts.end
- * @returns {EquationDef} object with
+ * @returns {EquationDef}
  */
 export function calculateEquation({ start, end }) {
 	const rightMostPoint = start.x > end.x ? start : end;
@@ -73,4 +73,65 @@ export function calculateEquation({ start, end }) {
 		gradient,
 		yIntercept,
 	};
+}
+
+/**
+ * check if two variables are equal
+ * @param {any} x
+ * @param {any} y
+ * @returns {boolean} whether x & y are deep equal
+ */
+function deepEqual(x, y) {
+	const bothAreObjects =
+		x && y && typeof x === 'object' && typeof y === 'object';
+	if (isNaN(x) || isNaN(y)) {
+		return isNaN(x) && isNaN(y);
+	} else if (bothAreObjects) {
+		const xKeys = Object.keys(x);
+		const yKeys = Object.keys(y);
+		return (
+			xKeys.length === yKeys.length &&
+			xKeys.every((key) => deepEqual(x[key], y[key]))
+		);
+	} else {
+		return x === y;
+	}
+}
+
+/**
+ * given line equations, find the intersection point
+ * @exports
+ * @throws
+ * @param {LineAnalysis} lineA
+ * @param {LineAnalysis} lineB
+ * @returns {Position}
+ */
+export function findIntersection(
+	{ gradient: a, yIntercept: c, start: startA },
+	{ gradient: b, yIntercept: d, start: startB }
+) {
+	if (deepEqual(a, b)) {
+		throw new Error('Lines Parallel');
+	}
+
+	if (isNaN(a)) {
+		return {
+			x: startA.x,
+			y: b * startA.x + d,
+		};
+	} else if (isNaN(b)) {
+		return {
+			x: startB.x,
+			y: a * startB.x + c,
+		};
+	} else {
+		// https://en.wikipedia.org/wiki/Line–line_intersection#Given_two_line_equations
+		const x = (d - c) / (a - b);
+		const y = a * x + c;
+
+		return {
+			x,
+			y,
+		};
+	}
 }
