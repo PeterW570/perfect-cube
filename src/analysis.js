@@ -114,7 +114,7 @@ function intersectionClosenessForLines(lines) {
 		}
 
 		if (minDist === null || min < minDist) minDist = min;
-		if (maxDist === null || max < maxDist) maxDist = max;
+		if (maxDist === null || max > maxDist) maxDist = max;
 		totalDist += totalDistForArr / distArr.length;
 		totalRange += max - min / distArr.length;
 	}
