@@ -418,7 +418,11 @@ export function analyse({
 			group.map((idx) => analysedLines[idx])
 		);
 		totalLinePerspectiveScore +=
-			100 - Math.min(100, closeness.averageRange / closeness.minDistance);
+			100 -
+			Math.min(
+				100,
+				closeness.averageRange / Math.sqrt(closeness.minDistance)
+			);
 		if (!debugProperties.perspectiveScores)
 			debugProperties.perspectiveScores = [];
 		debugProperties.perspectiveScores.push({ groupIdx, closeness });
