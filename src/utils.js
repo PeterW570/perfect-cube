@@ -76,6 +76,35 @@ export function calculateEquation({ start, end }) {
 }
 
 /**
+ * converts an angle in radians to degrees
+ * @param {number} rads - angle in radians
+ * @returns {number} angle in degrees
+ */
+function radsToDegs(rads) {
+	return (180 * rads) / Math.PI;
+}
+
+/**
+ * given two points, calculate the angle of the line
+ * that goes through them.
+ * @exports
+ * @param {object} opts
+ * @param {Position} opts.start
+ * @param {Position} opts.end
+ * @returns {number[]} the angle of end w.r.t start and vice verse
+ */
+export function angleOfLineBetweenPoints({ start, end }) {
+	const dx = end.x - start.x;
+	const dy = end.y - start.y;
+
+	const rads = Math.atan(dy / dx);
+	return [
+		radsToDegs(rads),
+		rads < 0 ? radsToDegs(rads) + 180 : radsToDegs(rads) - 180,
+	];
+}
+
+/**
  * check if two variables are equal
  * @param {any} x
  * @param {any} y

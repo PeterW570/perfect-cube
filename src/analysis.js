@@ -1,4 +1,5 @@
 import {
+	angleOfLineBetweenPoints,
 	calculateEquation,
 	distanceBetweenPoints,
 	distanceFromPointToLine,
@@ -71,10 +72,12 @@ function findExtendedLineEnds({
 
 /**
  * @typedef {object} ClosenessDetails
+ * @property {boolean} hasParallelLines
  * @property {number} minDistance
  * @property {number} maxDistance
  * @property {number} averageDistance
  * @property {number} averageRange
+ * @property {number} angleDiffDegrees
  */
 
 /**
@@ -83,17 +86,29 @@ function findExtendedLineEnds({
  * @returns {ClosenessDetails}
  */
 function intersectionClosenessForLines(lines) {
+	let hasParallelLines = false;
 	const intersectionDistances = [];
+	const lineAngles = [];
 	outer: for (const i in lines) {
 		intersectionDistances.push([]);
+		const angles = angleOfLineBetweenPoints({
+			start: lines[i].boxStart,
+			end: lines[i].boxEnd,
+		});
+		console.log(angles);
+		lineAngles.push(angles);
 		for (const j in lines) {
 			if (i === j) continue;
-			const intersectionPoint = findIntersection(lines[i], lines[j]);
-			const distFromBox = Math.min(
-				distanceBetweenPoints(lines[i].boxStart, intersectionPoint),
-				distanceBetweenPoints(lines[i].boxEnd, intersectionPoint)
-			);
-			intersectionDistances[i].push(distFromBox);
+			try {
+				const intersectionPoint = findIntersection(lines[i], lines[j]);
+				const distFromBox = Math.min(
+					distanceBetweenPoints(lines[i].boxStart, intersectionPoint),
+					distanceBetweenPoints(lines[i].boxEnd, intersectionPoint)
+				);
+				intersectionDistances[i].push(distFromBox);
+			} catch {
+				hasParallelLines = true;
+			}
 		}
 	}
 
@@ -119,11 +134,25 @@ function intersectionClosenessForLines(lines) {
 		totalRange += max - min / distArr.length;
 	}
 
+	const firstAngle = Math.min(...lineAngles[0]);
+	const anglesClosestToFirstAngle = lineAngles.map((angles) => {
+		return angles.reduce((a, b) => {
+			const absA = Math.abs(firstAngle - a);
+			const absB = Math.abs(firstAngle - b);
+			console.log(a, b, absA, absB);
+			return absA < absB ? a : b;
+		});
+	});
+	const maxAngle = Math.max(...anglesClosestToFirstAngle);
+	const minAngle = Math.min(...anglesClosestToFirstAngle);
+
 	return {
 		minDistance: minDist,
 		maxDistance: maxDist,
 		averageDistance: totalDist / intersectionDistances.length,
 		averageRange: totalRange / intersectionDistances.length,
+		hasParallelLines,
+		angleDiffDegrees: maxAngle - minAngle,
 	};
 }
 
@@ -417,12 +446,17 @@ export function analyse({
 		const closeness = intersectionClosenessForLines(
 			group.map((idx) => analysedLines[idx])
 		);
-		totalLinePerspectiveScore +=
-			100 -
-			Math.min(
-				100,
-				closeness.averageRange / Math.sqrt(closeness.minDistance)
-			);
+
+		if (closeness.hasParallelLines) {
+			totalLinePerspectiveScore += 100 - Math.min(100, angleDiffDegrees);
+		} else {
+			totalLinePerspectiveScore +=
+				100 -
+				Math.min(
+					100,
+					closeness.averageRange / Math.sqrt(closeness.minDistance)
+				);
+		}
 		if (!debugProperties.perspectiveScores)
 			debugProperties.perspectiveScores = [];
 		debugProperties.perspectiveScores.push({ groupIdx, closeness });
