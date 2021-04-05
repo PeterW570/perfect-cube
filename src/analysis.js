@@ -134,6 +134,13 @@ function intersectionClosenessForLines(lines) {
 		totalRange += max - min / distArr.length;
 	}
 
+	// choose the angle closest to 0, and then pick the angles
+	// closest to that for the remaining lines.
+	// when edges are parallel, fall back to comparing angles of them
+	// TODO: we should care about the direction of the lines
+	// i.e. we care about where the V.P. is and that they're
+	// pointing towards it. we also should care that the outside
+	// edges point inwards towards the central edge(s)
 	const firstAngle = Math.min(...lineAngles[0]);
 	const anglesClosestToFirstAngle = lineAngles.map((angles) => {
 		return angles.reduce((a, b) => {
