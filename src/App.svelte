@@ -13,6 +13,7 @@
 	let startPosition = { x: 0, y: 0 };
 	let endPosition = { x: 0, y: 0 };
 	let isDrawing = false;
+	const MIN_POINTS = 5;
 
 	/**
 	 * @typedef {object} LineDetails
@@ -85,11 +86,17 @@
 
 	function onMouseUp() {
 		const lastLine = lineHistory[lineHistory.length - 1];
-		lastLine.end = lastLine.points[lastLine.points.length - 1];
-		debugLineDetails = [
-			...debugLineDetails,
-			{ start: lastLine.start, end: lastLine.end },
-		];
+		console.log(lastLine.points.length);
+		if (lastLine.points.length < MIN_POINTS) {
+			lineHistory.pop();
+		}
+		else {
+			lastLine.end = lastLine.points[lastLine.points.length - 1];
+			debugLineDetails = [
+				...debugLineDetails,
+				{ start: lastLine.start, end: lastLine.end },
+			];
+		}
 		isDrawing = false;
 	}
 
