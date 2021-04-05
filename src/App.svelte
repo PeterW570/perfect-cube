@@ -89,8 +89,7 @@
 		console.log(lastLine.points.length);
 		if (lastLine.points.length < MIN_POINTS) {
 			lineHistory.pop();
-		}
-		else {
+		} else {
 			lastLine.end = lastLine.points[lastLine.points.length - 1];
 			debugLineDetails = [
 				...debugLineDetails,
