@@ -14,6 +14,8 @@
 	let endPosition = { x: 0, y: 0 };
 	let isDrawing = false;
 	const MIN_POINTS = 5;
+	const GROUP_COLOURS = ['red', 'orange', 'purple'];
+	const FONT_OVER_GROUP_COLOUR = ['white', 'black', 'white'];
 
 	/**
 	 * @typedef {object} LineDetails
@@ -26,6 +28,8 @@
 	let cornerDistanceMatrix = [];
 	let debugLineDetails = [];
 	let debugProperties = {};
+	let groupedTraceLines = {};
+	let traceLineHidden = {};
 
 	let cornerClosenessScore = null;
 	let straightnessScore = null;
@@ -99,11 +103,34 @@
 		isDrawing = false;
 	}
 
+	function onToggleGroupTraceVisibility(key, e) {
+		traceLineHidden[key] = !traceLineHidden[key];
+		clearCanvas();
+		for (const line of lineHistory) {
+			let start = line.start;
+			for (const point of line.points) {
+				drawLine({ start, end: point });
+				start = point;
+			}
+		}
+		for (const groupIdx in groupedTraceLines) {
+			if (traceLineHidden[groupIdx]) continue;
+			const grouplines = groupedTraceLines[groupIdx];
+			for (const { start, end } of grouplines) {
+				ctx.strokeStyle = GROUP_COLOURS[groupIdx] || 'red';
+				drawLine({ start, end });
+			}
+		}
+		ctx.strokeStyle = '#000';
+	}
+
 	function reset() {
 		lineHistory = [];
 		cornerDistanceMatrix = [];
 		debugLineDetails = [];
 		debugProperties = {};
+		groupedTraceLines = {};
+		traceLineHidden = {};
 
 		cornerClosenessScore = null;
 		straightnessScore = null;
@@ -154,10 +181,10 @@
 		overallScore =
 			(cornerClosenessScore + straightnessScore + perspectiveScore) / 3;
 
-		const colours = ['red', 'orange', 'purple'];
 		for (const { start, end, groupIdx } of analysedLines) {
-			ctx.strokeStyle = colours[groupIdx] || 'red';
+			ctx.strokeStyle = GROUP_COLOURS[groupIdx] || 'red';
 			drawLine({ start, end });
+			groupedTraceLines[groupIdx] = (groupedTraceLines[groupIdx] || []).concat([{ start, end }])
 		}
 		ctx.strokeStyle = '#000';
 	}
@@ -221,18 +248,21 @@
 			</li>
 		</ul>
 	</div>
-	<div class="notes flow">
-		<h2>Notes</h2>
-		<ul>
-			<li>Draw each edge with a single stroke.</li>
+	{#if Object.keys(groupedTraceLines).length > 0}
+		<div>
+			<h2>Toggle Line Visibility</h2>
+			<ul class="line-toggle-list">
+				{#each Object.keys(groupedTraceLines) as key}
 			<li>
-				Think of where the vanishing points are for each of the parallel
-				edges on the box.
+						<label style="background-color: {GROUP_COLOURS[key] || 'red'}; color: {FONT_OVER_GROUP_COLOUR[key] || 'white'}">
+							<span>Group {Number(key) + 1}</span>
+							<input type="checkbox" checked on:change={onToggleGroupTraceVisibility.bind(null, key)}>
+						</label>
 			</li>
+				{/each}
 		</ul>
 	</div>
-	<div class="debug flow">
-		<h2>Debug Info</h2>
+	{/if}
 		{#if cornerDistanceMatrix.length === 0}
 			<p>Click Analyse to get debug info</p>
 		{/if}
@@ -364,6 +394,25 @@
 
 	.debug li {
 		margin: 8px 0;
+	}
+
+	.line-toggle-list {
+		list-style: none;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	.line-toggle-list > li {
+		font-weight: bold;
+		flex-grow: 1;
+		text-align: center;
+	}
+
+	.line-toggle-list > li > label {
+		padding: 1rem;
+		margin: 2px;
+		border-radius: 2px;
 	}
 
 	.score-items {
