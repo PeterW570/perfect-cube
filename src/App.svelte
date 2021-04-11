@@ -90,7 +90,6 @@
 
 	function onMouseUp() {
 		const lastLine = lineHistory[lineHistory.length - 1];
-		console.log(lastLine.points.length);
 		if (lastLine.points.length < MIN_POINTS) {
 			lineHistory.pop();
 		} else {
@@ -176,7 +175,6 @@
 		straightnessScore =
 			100 - Math.min(100, Math.pow(averageLineDeviation, 3) * 2);
 
-		// TODO: handle parallel lines
 		perspectiveScore = overallPerspectiveScore;
 		overallScore =
 			(cornerClosenessScore + straightnessScore + perspectiveScore) / 3;
@@ -202,6 +200,9 @@
 	<div class="title-container flex">
 		<h1>Perfect Cube</h1>
 		<ThemePicker />
+	</div>
+	<div class="subtitle m-0">
+		Note: Draw each edge with a single stroke. Once you've drawn a cube, click analyse.
 	</div>
 	<div class="buttons text-center">
 		<button class="select-none" on:click={onClickClear}>Clear</button>
@@ -238,12 +239,12 @@
 			<li class="score-item">
 				<span class="score-key">Perspective</span><span
 					class="score-value"
-					>{perspectiveScore?.toFixed(1) ?? '-'}</span
+					>{isNaN(perspectiveScore) ? 'Error' : perspectiveScore?.toFixed(1) ?? '-'}</span
 				>
 			</li>
 			<li class="score-item">
 				<span class="score-key">Overall</span><span class="score-value"
-					>{overallScore?.toFixed(1) ?? '-'}</span
+					>{isNaN(overallScore) ? 'Error' : overallScore?.toFixed(1) ?? '-'}</span
 				>
 			</li>
 		</ul>
@@ -253,16 +254,18 @@
 			<h2>Toggle Line Visibility</h2>
 			<ul class="line-toggle-list">
 				{#each Object.keys(groupedTraceLines) as key}
-			<li>
+					<li>
 						<label style="background-color: {GROUP_COLOURS[key] || 'red'}; color: {FONT_OVER_GROUP_COLOUR[key] || 'white'}">
 							<span>Group {Number(key) + 1}</span>
 							<input type="checkbox" checked on:change={onToggleGroupTraceVisibility.bind(null, key)}>
 						</label>
-			</li>
+					</li>
 				{/each}
-		</ul>
-	</div>
+			</ul>
+		</div>
 	{/if}
+	<details class="debug flow">
+		<summary><h2>Debug Info</h2></summary>
 		{#if cornerDistanceMatrix.length === 0}
 			<p>Click Analyse to get debug info</p>
 		{/if}
@@ -289,20 +292,32 @@
 							Group: {perspectiveScores.groupIdx}
 						</div>
 						<div>
+							hasParallelLines: {perspectiveScores.closeness
+								.hasParallelLines}
+						</div>
+						<div>
+							lineAngles: {perspectiveScores.closeness
+								.lineAngles.map(angles => `[${angles.map(a => `${a.toFixed(2)}deg`).join(', ')}]`).join(', ')}
+						</div>
+						<div>
+							angleDiffDegrees: {perspectiveScores.closeness
+								.angleDiffDegrees.toFixed(3)}deg
+						</div>
+						<div>
 							minDistance: {perspectiveScores.closeness
-								.minDistance}
+								.minDistance.toFixed(3)}
 						</div>
 						<div>
 							maxDistance: {perspectiveScores.closeness
-								.maxDistance}
+								.maxDistance.toFixed(3)}
 						</div>
 						<div>
 							averageDistance: {perspectiveScores.closeness
-								.averageDistance}
+								.averageDistance.toFixed(3)}
 						</div>
 						<div>
 							averageRange: {perspectiveScores.closeness
-								.averageRange}
+								.averageRange.toFixed(3)}
 						</div>
 					</li>
 				{/each}
@@ -367,7 +382,7 @@
 				</li>
 			{/each}
 		</ol>
-	</div>
+	</details>
 </main>
 
 <style>
@@ -375,6 +390,12 @@
 		padding: 1em;
 		max-width: 50em;
 		margin: 0 auto;
+	}
+
+	.subtitle {
+		color: var(--subtle-color);
+		font-style: italic;
+		font-size: 0.9rem;
 	}
 
 	.title-container {
@@ -386,6 +407,10 @@
 		border: 1px solid #dadada;
 		touch-action: none;
 		background-color: var(--canvas-background);
+	}
+
+	summary > * {
+		display: inline;
 	}
 
 	.debug > :not(:first-child) {

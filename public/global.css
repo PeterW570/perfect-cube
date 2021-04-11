@@ -2,6 +2,7 @@
 	--background: white;
 	--canvas-background: white;
 	--color: #333;
+	--subtle-color: #444;
 	--button-background: initial;
 	--button-color: #333;
 }
@@ -12,6 +13,7 @@
 		--background: #333;
 		--canvas-background: #666;
 		--color: white;
+		--subtle-color: #bbb;
 		--button-background: #666;
 		--button-color: white;
 	}
@@ -21,6 +23,7 @@
 	--background: #333;
 	--canvas-background: #555;
 	--color: white;
+	--subtle-color: #bbb;
 	--button-background: #666;
 	--button-color: white;
 }
@@ -124,4 +127,8 @@ button:focus {
 
 .text-center {
 	text-align: center;
+}
+
+.m-0 {
+	margin: 0;
 }

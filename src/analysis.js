@@ -78,6 +78,7 @@ function findExtendedLineEnds({
  * @property {number} averageDistance
  * @property {number} averageRange
  * @property {number} angleDiffDegrees
+ * @property {number[]} lineAngles - angles of the lines in degrees
  */
 
 /**
@@ -160,6 +161,7 @@ function intersectionClosenessForLines(lines) {
 		averageRange: totalRange / intersectionDistances.length,
 		hasParallelLines,
 		angleDiffDegrees: maxAngle - minAngle,
+		lineAngles,
 	};
 }
 
@@ -455,7 +457,7 @@ export function analyse({
 		);
 
 		if (closeness.hasParallelLines) {
-			totalLinePerspectiveScore += 100 - Math.min(100, angleDiffDegrees);
+			totalLinePerspectiveScore += 100 - Math.min(100, closeness.angleDiffDegrees);
 		} else {
 			totalLinePerspectiveScore +=
 				100 -
