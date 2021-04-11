@@ -149,10 +149,14 @@
 	async function onClickCopyLineHistory(event) {
 		const text = JSON.stringify(lineHistory);
 		try {
-			await navigator.clipboard.writeText(text)
-			event.target.textContent = 'Copied to clipboard'
+			await navigator.clipboard.writeText(text);
+			event.target.textContent = 'Copied to clipboard';
+			setTimeout(
+				() => (event.target.textContent = 'Copy Line History Data'),
+				2000
+			);
 		} catch (err) {
-			console.error('Failed to copy!', err)
+			console.error('Failed to copy!', err);
 		}
 	}
 
@@ -192,7 +196,9 @@
 		for (const { start, end, groupIdx } of analysedLines) {
 			ctx.strokeStyle = GROUP_COLOURS[groupIdx] || 'red';
 			drawLine({ start, end });
-			groupedTraceLines[groupIdx] = (groupedTraceLines[groupIdx] || []).concat([{ start, end }])
+			groupedTraceLines[groupIdx] = (
+				groupedTraceLines[groupIdx] || []
+			).concat([{ start, end }]);
 		}
 		ctx.strokeStyle = '#000';
 	}
@@ -212,7 +218,8 @@
 		<ThemePicker />
 	</div>
 	<div class="subtitle m-0">
-		Note: Draw each edge with a single stroke. Once you've drawn a cube, click analyse.
+		Note: Draw each edge with a single stroke. Once you've drawn a cube,
+		click analyse.
 	</div>
 	<div class="buttons text-center">
 		<button class="select-none" on:click={onClickClear}>Clear</button>
@@ -237,24 +244,32 @@
 			<li class="score-item">
 				<span class="score-key">Corner Closeness</span>
 				<span class="score-value"
-					>{isNaN(cornerClosenessScore) ? 'Error' : cornerClosenessScore?.toFixed(1) ?? '-'}</span
+					>{isNaN(cornerClosenessScore)
+						? 'Error'
+						: cornerClosenessScore?.toFixed(1) ?? '-'}</span
 				>
 			</li>
 			<li class="score-item">
 				<span class="score-key">Straightness</span>
 				<span class="score-value"
-					>{isNaN(straightnessScore) ? 'Error' : straightnessScore?.toFixed(1) ?? '-'}</span
+					>{isNaN(straightnessScore)
+						? 'Error'
+						: straightnessScore?.toFixed(1) ?? '-'}</span
 				>
 			</li>
 			<li class="score-item">
 				<span class="score-key">Perspective</span><span
 					class="score-value"
-					>{isNaN(perspectiveScore) ? 'Error' : perspectiveScore?.toFixed(1) ?? '-'}</span
+					>{isNaN(perspectiveScore)
+						? 'Error'
+						: perspectiveScore?.toFixed(1) ?? '-'}</span
 				>
 			</li>
 			<li class="score-item">
 				<span class="score-key">Overall</span><span class="score-value"
-					>{isNaN(overallScore) ? 'Error' : overallScore?.toFixed(1) ?? '-'}</span
+					>{isNaN(overallScore)
+						? 'Error'
+						: overallScore?.toFixed(1) ?? '-'}</span
 				>
 			</li>
 		</ul>
@@ -265,9 +280,20 @@
 			<ul class="line-toggle-list">
 				{#each Object.keys(groupedTraceLines) as key}
 					<li>
-						<label style="background-color: {GROUP_COLOURS[key] || 'red'}; color: {FONT_OVER_GROUP_COLOUR[key] || 'white'}">
+						<label
+							style="background-color: {GROUP_COLOURS[key] ||
+								'red'}; color: {FONT_OVER_GROUP_COLOUR[key] ||
+								'white'}"
+						>
 							<span>Group {Number(key) + 1}</span>
-							<input type="checkbox" checked on:change={onToggleGroupTraceVisibility.bind(null, key)}>
+							<input
+								type="checkbox"
+								checked
+								on:change={onToggleGroupTraceVisibility.bind(
+									null,
+									key
+								)}
+							/>
 						</label>
 					</li>
 				{/each}
@@ -277,7 +303,9 @@
 	<details class="debug flow">
 		<summary><h2>Debug Info</h2></summary>
 		{#if isNaN(overallScore)}
-			<button class="select-none" on:click={onClickCopyLineHistory}>Copy Line History Data</button>
+			<button class="select-none" on:click={onClickCopyLineHistory}
+				>Copy Line History Data</button
+			>
 		{/if}
 		{#if cornerDistanceMatrix.length === 0}
 			<p>Click Analyse to get debug info</p>
@@ -309,28 +337,39 @@
 								.hasParallelLines}
 						</div>
 						<div>
-							lineAngles: {perspectiveScores.closeness
-								.lineAngles.map(angles => `[${angles.map(a => `${a.toFixed(2)}deg`).join(', ')}]`).join(', ')}
+							lineAngles: {perspectiveScores.closeness.lineAngles
+								.map(
+									(angles) =>
+										`[${angles
+											.map((a) => `${a.toFixed(2)}deg`)
+											.join(', ')}]`
+								)
+								.join(', ')}
 						</div>
 						<div>
-							angleDiffDegrees: {perspectiveScores.closeness
-								.angleDiffDegrees.toFixed(3)}deg
+							angleDiffDegrees: {perspectiveScores.closeness.angleDiffDegrees.toFixed(
+								3
+							)}deg
 						</div>
 						<div>
-							minDistance: {perspectiveScores.closeness
-								.minDistance.toFixed(3)}
+							minDistance: {perspectiveScores.closeness.minDistance.toFixed(
+								3
+							)}
 						</div>
 						<div>
-							maxDistance: {perspectiveScores.closeness
-								.maxDistance.toFixed(3)}
+							maxDistance: {perspectiveScores.closeness.maxDistance.toFixed(
+								3
+							)}
 						</div>
 						<div>
-							averageDistance: {perspectiveScores.closeness
-								.averageDistance.toFixed(3)}
+							averageDistance: {perspectiveScores.closeness.averageDistance.toFixed(
+								3
+							)}
 						</div>
 						<div>
-							averageRange: {perspectiveScores.closeness
-								.averageRange.toFixed(3)}
+							averageRange: {perspectiveScores.closeness.averageRange.toFixed(
+								3
+							)}
 						</div>
 					</li>
 				{/each}

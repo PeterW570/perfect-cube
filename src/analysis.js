@@ -457,7 +457,8 @@ export function analyse({
 		);
 
 		if (closeness.hasParallelLines) {
-			totalLinePerspectiveScore += 100 - Math.min(100, closeness.angleDiffDegrees);
+			totalLinePerspectiveScore +=
+				100 - Math.min(100, closeness.angleDiffDegrees);
 		} else {
 			totalLinePerspectiveScore +=
 				100 -
