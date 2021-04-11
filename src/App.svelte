@@ -146,6 +146,16 @@
 		clearCanvas();
 	}
 
+	async function onClickCopyLineHistory(event) {
+		const text = JSON.stringify(lineHistory);
+		try {
+			await navigator.clipboard.writeText(text)
+			event.target.textContent = 'Copied to clipboard'
+		} catch (err) {
+			console.error('Failed to copy!', err)
+		}
+	}
+
 	function onClickAnalyse() {
 		const {
 			analysedLines,
@@ -227,13 +237,13 @@
 			<li class="score-item">
 				<span class="score-key">Corner Closeness</span>
 				<span class="score-value"
-					>{cornerClosenessScore?.toFixed(1) ?? '-'}</span
+					>{isNaN(cornerClosenessScore) ? 'Error' : cornerClosenessScore?.toFixed(1) ?? '-'}</span
 				>
 			</li>
 			<li class="score-item">
 				<span class="score-key">Straightness</span>
 				<span class="score-value"
-					>{straightnessScore?.toFixed(1) ?? '-'}</span
+					>{isNaN(straightnessScore) ? 'Error' : straightnessScore?.toFixed(1) ?? '-'}</span
 				>
 			</li>
 			<li class="score-item">
@@ -266,6 +276,9 @@
 	{/if}
 	<details class="debug flow">
 		<summary><h2>Debug Info</h2></summary>
+		{#if isNaN(overallScore)}
+			<button class="select-none" on:click={onClickCopyLineHistory}>Copy Line History Data</button>
+		{/if}
 		{#if cornerDistanceMatrix.length === 0}
 			<p>Click Analyse to get debug info</p>
 		{/if}
