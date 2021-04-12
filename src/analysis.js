@@ -170,7 +170,7 @@ function intersectionClosenessForLines(lines) {
  * they must be closer than this distance
  * @const {number} MAX_CORNER_DISTANCE
  */
-const MAX_CORNER_DISTANCE = 15;
+const MAX_CORNER_DISTANCE = 20;
 const POINTS_ON_LINE = ['start', 'end'];
 
 /**
